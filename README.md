@@ -34,8 +34,8 @@ To access the Consul UI to see the registered services and health checks:
 [http://localhost:8500/ui](http://localhost:8500/ui)
 
 To access the RabbitMQ management interface:
-- rabbitmq1: http://localhost:15672/#/[http://localhost:15672/#/]
-- rabbitmq2: http://localhost:15673/#/[http://localhost:15673/#/]
+- rabbitmq1: [http://localhost:15672/#/](http://localhost:15672/#/)
+- rabbitmq2: [http://localhost:15673/#/](http://localhost:15673/#/)
 
 ## Clean Up
 If you want to start over from scratch run the following:
