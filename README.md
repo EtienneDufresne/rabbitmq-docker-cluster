@@ -41,8 +41,7 @@ To access the RabbitMQ management interface:
 If you want to start over from scratch run the following:
 ```
 docker-compose stop
-docker rm rabbitmq1 -f -v
-docker rm rabbitmq2 -f -v
+docker-compose rm -f -v
 docker volume rm rabbitmqdockercluster_rabbitmq_persistence1
 docker volume rm rabbitmqdockercluster_rabbitmq_persistence2
 ```
