@@ -1,0 +1,109 @@
+version: '2'
+
+networks:
+  rabbitmq_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.20.0.0/24
+        gateway: 172.20.0.1
+
+# The Following volumes will ensure that the rabbitmq config and queue data will
+# be persisted to the docker host's disk in case the service crashes and
+# restarts or is redeployed.
+volumes:
+  rabbitmq_persistence1: {}
+  rabbitmq_persistence2: {}
+
+services:
+  # Service Registery
+  consul:
+    image: gliderlabs/consul-server:latest
+    restart: always
+    container_name: consul
+    command: -bootstrap-expect 1
+    environment:
+      - SERVICE_8500_NAME=consul
+      - SERVICE_8600_NAME=consul
+    ports:
+      - "8500:8500"
+      - "8600:8600"
+    networks:
+      rabbitmq_network:
+        ipv4_address: 172.20.0.10
+
+  # This provides a DNS server that will delegate to consul DNS for
+  # hosts ending with "consul".
+  dnsmask:
+    image: andyshinn/dnsmasq:latest
+    depends_on:
+      - consul
+    restart: always
+    container_name: dnsmask
+    environment:
+      - SERVICE_53_NAME=dnsmask
+      - SERVICE_TAGS=dnsmask
+    ports:
+      - 53:53/tcp
+      - 53:53/udp
+    cap_add:
+      - NET_ADMIN
+    command: -S /consul/172.20.0.10#8600 --log-facility=-
+    networks:
+      rabbitmq_network:
+        ipv4_address: 172.20.0.11
+
+  # Monitors all containers and automatically registers and deregisters
+  # them in Consul.
+  registrator:
+    image: gliderlabs/registrator:latest
+    depends_on:
+      - consul
+    restart: always
+    container_name: registrator
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock
+    command: consul://consul:8500
+    networks:
+      - rabbitmq_network
+
+  # RabbitMQ node 1
+  rabbitmq1:
+    image: rabbitmq-docker-cluster:latest
+    depends_on:
+      - consul
+    hostname: rabbitmq1
+    container_name: rabbitmq1
+    environment:
+      - SERVICE_IP=rabbitmq1
+      - ENTRYPOINT_DEBUG_LOGS=true
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    volumes:
+      - rabbitmq_persistence1:/var/lib/rabbitmq/mnesia
+    networks:
+      - rabbitmq_network
+    dns:
+      - 172.20.0.11
+
+  # RabbitMQ node 2
+  rabbitmq2:
+    image: rabbitmq-docker-cluster:latest
+    depends_on:
+      - consul
+    hostname: rabbitmq2
+    container_name: rabbitmq2
+    environment:
+      - SERVICE_IP=rabbitmq2
+      - ENTRYPOINT_DEBUG_LOGS=true
+    ports:
+      - "15673:15672"
+      - "5673:5672"
+    volumes:
+      - rabbitmq_persistence2:/var/lib/rabbitmq/mnesia
+    networks:
+      - rabbitmq_network
+    dns:
+      - 172.20.0.11

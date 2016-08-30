@@ -1,0 +1,10 @@
+{
+  "name": "rabbitmq-docker-cluster",
+  "version": "0.0.1-0",
+  "author": "Etienne Dufresne",
+  "license": "GNU",
+  "dependencies": {
+    "amqplib": "^0.4.1"
+  },
+  "devDependencies": { }
+}
